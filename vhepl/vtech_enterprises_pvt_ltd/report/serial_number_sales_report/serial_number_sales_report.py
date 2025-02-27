@@ -5,14 +5,30 @@ import frappe
 
 
 def execute(filters=None):
-    return get_columns(), get_data()
+    data = get_data()
+    columns = get_columns()
+    frappe.log(data)
+    return columns, data
 
 def get_data():
-    return frappe.db.sql(""" SELECT sabe.serial_no, sabb.voucher_no, si.customer, si.posting_date, sii.item_code, si.company, sii.rate, si.party_code, si.sales_person
-								FROM `tabSales Invoice` as si
-								JOIN `tabSerial and Batch Bundle` as sabb ON sabb.voucher_no = si.name and sabb.voucher_type = "Sales Invoice"
-								JOIN `tabSerial and Batch Entry` as sabe ON sabe.parent = sabb.name 
-        						JOIN `tabSales Invoice Item` as sii ON sii.parent = si.name and sii.serial_and_batch_bundle = sabb.name""")
+    return frappe.db.sql(""" 
+        SELECT 
+			sabe.serial_no,
+			sii.item_name as item,
+			sii.item_code,
+			si.company,
+			si.name,
+			si.posting_date,
+			si.customer,
+			sii.rate,
+			si.party_code,
+			si.sales_person as salesman
+		FROM `tabSales Invoice` as si
+		JOIN `tabSerial and Batch Bundle` as sabb ON sabb.voucher_no = si.name and sabb.voucher_type = "Sales Invoice"
+		JOIN `tabSerial and Batch Entry` as sabe ON sabe.parent = sabb.name 
+		JOIN `tabSales Invoice Item` as sii ON sii.parent = si.name and sii.serial_and_batch_bundle = sabb.name
+  		WHERE si.docstatus = 1 
+    """)
 
 def get_columns():
     columns = [
@@ -24,26 +40,26 @@ def get_columns():
 			"width": 120,
 		},
 		{
-			"fieldname": "item",
+			"fieldname": "item_code",
 			"label": "Item",
 			"fieldtype": "Link",
 			"options": "Item",
 			"width": 120,
 		},
 		{
-			"fieldname": "item_code",
-			"label": "Item Code",
+			"fieldname": "item_name",
+			"label": "Item Name",
 			"fieldtype": "Data",
 			"width": 120,
 		},
 		{
-			"fieldname": "company_name",
+			"fieldname": "company",
 			"label": "Company Name",
 			"fieldtype": "Data",
 			"width": 120,
 		},
 		{
-			"fieldname": "invoice_id",
+			"fieldname": "name",
 			"label": "Invoice No",
 			"fieldtype": "Link",
 			"options": "Sales Invoice",
@@ -63,7 +79,7 @@ def get_columns():
 			"width": 120,
 		},
 		{
-			"fieldname": "sales_rate",
+			"fieldname": "rate",
 			"label": "Sales Rate",
 			"fieldtype": "Currency",
 			"width": 120,
